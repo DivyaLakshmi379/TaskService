@@ -1,12 +1,14 @@
-# Use lightweight Java 17 runtime
-FROM eclipse-temurin:17-jre-jammy
 
-# Create app directory inside container
+# Step 1: Build the application inside a Maven container
+FROM maven:3.8.5-openjdk-17 AS build
 WORKDIR /app
+COPY pom.xml .
+COPY src ./src
+RUN mvn clean package -DskipTests
 
-# Copy the JAR file from target folder into container
-COPY target/task-service-0.0.1-SNAPSHOT.jar app.jar
-
-# Run the Spring Boot app
+# Step 2: Run the built JAR file inside a lightweight JDK image
+FROM eclipse-temurin:17-jre-jammy
+WORKDIR /app
+COPY --from=build /app/target/*.jar app.jar
+EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
-
